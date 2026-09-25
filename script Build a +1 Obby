@@ -2,32 +2,71 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Find all purchase remotes
-print("=== FINDING ALL PURCHASE REMOTES ===")
+print("=== STARTING SHOP AUTO BUY ===")
 
-local purchaseRemotes = {}
+-- Find the correct path
+local function findRemote(pathString)
+	local current = ReplicatedStorage
+	for part in string.gmatch(pathString, "([^.]+)") do
+		current = current:FindFirstChild(part)
+		if not current then return nil end
+	end
+	return current
+end
 
-for _, item in ipairs(ReplicatedStorage:GetDescendants()) do
-	if item:IsA("RemoteEvent") or item:IsA("RemoteFunction") then
-		local name = item.Name:lower()
-		if name:find("buy") or name:find("purchase") or name:find("shop") or name:find("item") then
-			table.insert(purchaseRemotes, {name = item.Name, path = item:GetFullName()})
-			print("✓ Found:", item:GetFullName())
+-- The correct path from the logs
+local networkPath = "GameSystems.Packages.Networker.leifstout_networker@0.3.0.networker._remotes"
+local networkFolder = findRemote(networkPath)
+
+if not networkFolder then
+	print("❌ Network folder not found!")
+	return
+end
+
+print("✓ Network folder found")
+
+-- Test each service
+local services = {"StockService", "UpgradeService", "PlotService", "ObbyTypeService"}
+local remoteEvent = nil
+local serviceName = nil
+
+for _, service in ipairs(services) do
+	local serviceFolder = networkFolder:FindFirstChild(service)
+	if serviceFolder then
+		local event = serviceFolder:FindFirstChild("RemoteEvent")
+		if event then
+			print("Testing:", service)
+			remoteEvent = event
+			serviceName = service
+			
+			-- Try to buy
+			remoteEvent:FireServer("Candy Keyboard")
+			task.wait(0.5)
+			remoteEvent:FireServer("Chocolate Keyboard")
+			task.wait(0.5)
+			
+			print("✓ Fired to:", serviceName)
 		end
 	end
 end
 
-print("=== CREATING GUI ===")
+if not remoteEvent then
+	print("❌ No RemoteEvent found!")
+	return
+end
 
+print("✓ Using Service:", serviceName)
+
+-- Create GUI
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "ShopDebugGui"
+screenGui.Name = "AutoBuyGUI"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 400, 0, 300)
-mainFrame.Position = UDim2.new(0.5, -200, 0, 50)
+mainFrame.Size = UDim2.new(0, 300, 0, 150)
+mainFrame.Position = UDim2.new(0.5, -150, 0, 20)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.BorderSizePixel = 2
 mainFrame.BorderColor3 = Color3.fromRGB(0, 150, 255)
@@ -35,128 +74,64 @@ mainFrame.Parent = screenGui
 
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Name = "TitleLabel"
-titleLabel.Size = UDim2.new(1, 0, 0, 30)
+titleLabel.Size = UDim2.new(1, 0, 0, 40)
 titleLabel.Position = UDim2.new(0, 0, 0, 0)
 titleLabel.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleLabel.TextSize = 18
 titleLabel.Font = Enum.Font.GothamBold
-titleLabel.Text = "🛍️ Shop Auto Buy - DEBUG"
+titleLabel.Text = "🛒 Auto Buy Shop"
 titleLabel.Parent = mainFrame
 
-local scrollFrame = Instance.new("ScrollingFrame")
-scrollFrame.Name = "ScrollFrame"
-scrollFrame.Size = UDim2.new(1, -20, 1, -70)
-scrollFrame.Position = UDim2.new(0, 10, 0, 40)
-scrollFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-scrollFrame.BorderSizePixel = 0
-scrollFrame.ScrollBarThickness = 12
-scrollFrame.Parent = mainFrame
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Name = "StatusLabel"
+statusLabel.Size = UDim2.new(1, 0, 0, 35)
+statusLabel.Position = UDim2.new(0, 0, 0, 42)
+statusLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+statusLabel.TextSize = 12
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.Text = "Service: " .. serviceName
+statusLabel.Parent = mainFrame
 
-local uiListLayout = Instance.new("UIListLayout")
-uiListLayout.Parent = scrollFrame
-uiListLayout.Padding = UDim.new(0, 5)
-
--- اختبر كل Remotes
-local testItems = {
-	"Candy Keyboard",
-	"Chocolate Keyboard",
-	"CandyKeyboard",
-	"ChocolateKeyboard",
-	"Treadmill",
-	"x1 Treadmill",
-	"Shoes",
-	"x1 Shoes",
-	"WaxNeedoh"
-}
-
-for _, remoteName in ipairs(purchaseRemotes) do
-	local button = Instance.new("TextButton")
-	button.Name = "TestButton_" .. remoteName.name
-	button.Size = UDim2.new(1, -10, 0, 40)
-	button.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
-	button.TextColor3 = Color3.fromRGB(255, 255, 255)
-	button.TextSize = 12
-	button.Font = Enum.Font.Gotham
-	button.Text = "Test: " .. remoteName.name
-	button.Parent = scrollFrame
-
-	button.MouseButton1Click:Connect(function()
-		print("Testing Remote:", remoteName.path)
-		
-		local parts = string.split(remoteName.path, ".")
-		local remote = ReplicatedStorage
-		
-		for _, part in ipairs(parts) do
-			remote = remote:FindFirstChild(part)
-			if not remote then break end
-		end
-		
-		if remote then
-			for _, itemName in ipairs(testItems) do
-				print("  -> Firing:", itemName)
-				if remote:IsA("RemoteEvent") then
-					remote:FireServer(itemName)
-				elseif remote:IsA("RemoteFunction") then
-					remote:InvokeServer(itemName)
-				end
-				task.wait(0.3)
-			end
-		end
-	end)
-end
-
--- زر للشراء التلقائي
-local buyAllButton = Instance.new("TextButton")
-buyAllButton.Name = "BuyAllButton"
-buyAllButton.Size = UDim2.new(1, -20, 0, 40)
-buyAllButton.Position = UDim2.new(0, 10, 1, -50)
-buyAllButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
-buyAllButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-buyAllButton.TextSize = 14
-buyAllButton.Font = Enum.Font.GothamBold
-buyAllButton.Text = "🛒 BUY CANDY + CHOCOLATE (Auto)"
-buyAllButton.Parent = mainFrame
+local buyButton = Instance.new("TextButton")
+buyButton.Name = "BuyButton"
+buyButton.Size = UDim2.new(1, -20, 0, 40)
+buyButton.Position = UDim2.new(0, 10, 0, 85)
+buyButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+buyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+buyButton.TextSize = 16
+buyButton.Font = Enum.Font.GothamBold
+buyButton.Text = "Buy All"
+buyButton.Parent = mainFrame
 
 local isBuying = false
 
-buyAllButton.MouseButton1Click:Connect(function()
+buyButton.MouseButton1Click:Connect(function()
 	if isBuying then
 		isBuying = false
-		buyAllButton.Text = "🛒 BUY CANDY + CHOCOLATE (Auto)"
-		buyAllButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+		buyButton.Text = "Buy All"
+		buyButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+		statusLabel.Text = "Stopped"
 		return
 	end
 
 	isBuying = true
-	buyAllButton.Text = "⏸️ STOP"
-	buyAllButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+	buyButton.Text = "Stop"
+	buyButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+	statusLabel.Text = "Buying..."
 
 	task.spawn(function()
 		while isBuying do
-			-- جرّب كل Remotes
-			for _, remoteName in ipairs(purchaseRemotes) do
-				local parts = string.split(remoteName.path, ".")
-				local remote = ReplicatedStorage
-				
-				for _, part in ipairs(parts) do
-					remote = remote:FindFirstChild(part)
-					if not remote then break end
-				end
-				
-				if remote then
-					print("Trying Remote:", remoteName.name)
-					if remote:IsA("RemoteEvent") then
-						remote:FireServer("Candy Keyboard")
-						task.wait(0.3)
-						remote:FireServer("Chocolate Keyboard")
-					end
-				end
-			end
+			print("Buying: Candy Keyboard")
+			remoteEvent:FireServer("Candy Keyboard")
+			task.wait(0.3)
 			
-			task.wait(1)
+			print("Buying: Chocolate Keyboard")
+			remoteEvent:FireServer("Chocolate Keyboard")
+			task.wait(0.3)
 		end
 	end)
 end)
 
-print("=== SHOP DEBUG GUI CREATED ===")
+print("=== SHOP AUTO BUY READY ===")
