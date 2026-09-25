@@ -1,187 +1,149 @@
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
-local leaderstats = player:WaitForChild("leaderstats")
-local cash = leaderstats:FindFirstChild("Cash")
-
-if not cash then
-    error("Cash value not found! Make sure it's named 'Cash'")
-end
-
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
+local cash = player:WaitForChild("leaderstats"):WaitForChild("Cash")
 
 -- Create GUI
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "CollectGui"
+screenGui.Name = "AFKMoneyGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
 -- Create Main Frame
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 250, 0, 100)
-mainFrame.Position = UDim2.new(0.5, -125, 0, 20)
-mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 50)
-mainFrame.BorderSizePixel = 0
+mainFrame.Size = UDim2.new(0, 300, 0, 150)
+mainFrame.Position = UDim2.new(0.5, -150, 0, 20)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BorderSizePixel = 2
+mainFrame.BorderColor3 = Color3.fromRGB(0, 100, 255)
 mainFrame.Parent = screenGui
 
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 12)
-corner.Parent = mainFrame
-
--- Title
+-- Create Title Label
 local titleLabel = Instance.new("TextLabel")
-titleLabel.Name = "Title"
-titleLabel.Size = UDim2.new(1, 0, 0, 35)
+titleLabel.Name = "TitleLabel"
+titleLabel.Size = UDim2.new(1, 0, 0, 40)
 titleLabel.Position = UDim2.new(0, 0, 0, 0)
-titleLabel.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+titleLabel.BackgroundColor3 = Color3.fromRGB(0, 100, 255)
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.TextSize = 16
+titleLabel.TextSize = 20
 titleLabel.Font = Enum.Font.GothamBold
-titleLabel.Text = "💰 Auto Collect"
+titleLabel.Text = "💰 Collect Zone"
 titleLabel.Parent = mainFrame
 
-local titleCorner = Instance.new("UICorner")
-titleCorner.CornerRadius = UDim.new(0, 12)
-titleCorner.Parent = titleLabel
-
--- Status
-local statusLabel = Instance.new("TextLabel")
-statusLabel.Name = "Status"
-statusLabel.Size = UDim2.new(1, -20, 0, 18)
-statusLabel.Position = UDim2.new(0, 10, 0, 38)
-statusLabel.BackgroundTransparency = 1
-statusLabel.Text = "Ready"
-statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
-statusLabel.TextSize = 12
-statusLabel.Font = Enum.Font.Gotham
-statusLabel.Parent = mainFrame
-
--- Button
+-- Create Collect Button
 local collectButton = Instance.new("TextButton")
 collectButton.Name = "CollectButton"
-collectButton.Size = UDim2.new(1, -20, 0, 32)
-collectButton.Position = UDim2.new(0, 10, 0, 60)
+collectButton.Size = UDim2.new(0, 280, 0, 50)
+collectButton.Position = UDim2.new(0, 10, 0, 50)
 collectButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
 collectButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-collectButton.TextSize = 14
+collectButton.TextSize = 18
 collectButton.Font = Enum.Font.GothamBold
-collectButton.Text = "Start"
+collectButton.Text = "🔄 Start Collect"
 collectButton.Parent = mainFrame
 
-local buttonCorner = Instance.new("UICorner")
-buttonCorner.CornerRadius = UDim.new(0, 8)
-buttonCorner.Parent = collectButton
-
--- Dragging
-local dragging = false
-local dragStart = nil
-local startPos = nil
-
-mainFrame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = mainFrame.Position
-    end
-end)
-
-mainFrame.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = false
-    end
-end)
-
-game:GetService("UserInputService").InputChanged:Connect(function(input)
-    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local delta = input.Position - dragStart
-        mainFrame.Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
-        )
-    end
-end)
+-- Create Cash Label
+local cashLabel = Instance.new("TextLabel")
+cashLabel.Name = "CashLabel"
+cashLabel.Size = UDim2.new(1, 0, 0, 30)
+cashLabel.Position = UDim2.new(0, 0, 0, 110)
+cashLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+cashLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
+cashLabel.TextSize = 14
+cashLabel.Font = Enum.Font.Gotham
+cashLabel.Text = "Cash: $0"
+cashLabel.Parent = mainFrame
 
 -- Variables
 local isCollecting = false
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
 
+-- Update Cash Label
+local function updateCashLabel()
+	cashLabel.Text = "Cash: $" .. tostring(math.floor(cash.Value))
+end
+
+cash.Changed:Connect(updateCashLabel)
+updateCashLabel()
+
+-- Find Collect Zones
 local function findCollectZones()
-    local zones = {}
-    for _, obj in ipairs(workspace:GetDescendants()) do
-        if obj:IsA("BasePart") then
-            local name = obj.Name:lower()
-            if string.find(name, "collect") then
-                table.insert(zones, obj)
-            end
-        end
-    end
-    return zones
+	local zones = {}
+	for _, obj in ipairs(workspace:GetDescendants()) do
+		if obj:IsA("BasePart") then
+			local name = obj.Name:lower()
+			if string.find(name, "collect") then
+				table.insert(zones, obj)
+			end
+		end
+	end
+	return zones
 end
 
-local function getNearestZone(zones)
-    local nearest = nil
-    local minDist = math.huge
-    
-    for _, zone in ipairs(zones) do
-        if zone and zone.Parent then
-            local dist = (zone.Position - hrp.Position).Magnitude
-            if dist < minDist then
-                minDist = dist
-                nearest = zone
-            end
-        end
-    end
-    
-    return nearest
+-- Get Nearest Zone
+local function getNearestZone()
+	local zones = findCollectZones()
+	local nearest = nil
+	local minDist = math.huge
+	
+	for _, zone in ipairs(zones) do
+		if zone and zone.Parent then
+			local dist = (zone.Position - hrp.Position).Magnitude
+			if dist < minDist then
+				minDist = dist
+				nearest = zone
+			end
+		end
+	end
+	
+	return nearest
 end
 
-local function collectZones()
-    while isCollecting do
-        local zones = findCollectZones()
-        if #zones > 0 then
-            local zone = getNearestZone(zones)
-            if zone then
-                statusLabel.Text = "Moving..."
-                hrp.CFrame = zone.CFrame + Vector3.new(0, 3, 0)
-            end
-        else
-            statusLabel.Text = "No zones"
-        end
-        wait(0.2)
-    end
+-- Collect Loop
+local function startCollecting()
+	if isCollecting then return end
+	isCollecting = true
+	collectButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+	collectButton.Text = "⏹️ Stop Collect"
+	
+	while isCollecting do
+		local zone = getNearestZone()
+		if zone then
+			hrp.CFrame = zone.CFrame + Vector3.new(0, 3, 0)
+		end
+		wait(0.2)
+	end
 end
 
-local function startCollect()
-    if isCollecting then return end
-    isCollecting = true
-    collectButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-    collectButton.Text = "Stop"
-    statusLabel.Text = "Collecting..."
-    task.spawn(collectZones)
+-- Stop Collecting
+local function stopCollecting()
+	isCollecting = false
+	collectButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+	collectButton.Text = "🔄 Start Collect"
 end
 
-local function stopCollect()
-    isCollecting = false
-    collectButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
-    collectButton.Text = "Start"
-    statusLabel.Text = "Stopped"
-end
-
+-- Button Click Event
 collectButton.MouseButton1Click:Connect(function()
-    if isCollecting then
-        stopCollect()
-    else
-        startCollect()
-    end
+	if isCollecting then
+		stopCollecting()
+	else
+		startCollecting()
+	end
 end)
 
 -- Character respawn
 player.CharacterAdded:Connect(function(newChar)
-    character = newChar
-    hrp = character:WaitForChild("HumanoidRootPart")
-    if isCollecting then
-        stopCollect()
-    end
+	character = newChar
+	hrp = character:WaitForChild("HumanoidRootPart")
+	if isCollecting then
+		stopCollecting()
+	end
+end)
+
+-- Cleanup on player leaving
+player.AncestryChanged:Connect(function()
+	if not player.Parent then
+		isCollecting = false
+	end
 end)
