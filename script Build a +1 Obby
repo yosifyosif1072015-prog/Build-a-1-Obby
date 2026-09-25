@@ -1,107 +1,215 @@
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 local cash = player:WaitForChild("leaderstats"):WaitForChild("Cash")
 
 -- Create GUI
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "AFKMoneyGui"
+screenGui.Name = "AFKCollectorGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
--- Create Main Frame
+-- Create Main Frame with Animation
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 300, 0, 150)
-mainFrame.Position = UDim2.new(0.5, -150, 0, 20)
-mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-mainFrame.BorderSizePixel = 2
-mainFrame.BorderColor3 = Color3.fromRGB(0, 100, 255)
+mainFrame.Size = UDim2.new(0, 350, 0, 200)
+mainFrame.Position = UDim2.new(0.5, -175, 0, 20)
+mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 40)
+mainFrame.BorderSizePixel = 3
+mainFrame.BorderColor3 = Color3.fromRGB(0, 150, 255)
 mainFrame.Parent = screenGui
 
--- Create Title Label
+-- Add Corner Radius Effect
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 15)
+corner.Parent = mainFrame
+
+-- Create Gradient Background
+local gradient = Instance.new("UIGradient")
+gradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 20, 60)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 40, 80))
+})
+gradient.Rotation = 45
+gradient.Parent = mainFrame
+
+-- Create Title Label with Gradient
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Name = "TitleLabel"
-titleLabel.Size = UDim2.new(1, 0, 0, 40)
+titleLabel.Size = UDim2.new(1, 0, 0, 50)
 titleLabel.Position = UDim2.new(0, 0, 0, 0)
-titleLabel.BackgroundColor3 = Color3.fromRGB(0, 100, 255)
+titleLabel.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.TextSize = 20
+titleLabel.TextSize = 22
 titleLabel.Font = Enum.Font.GothamBold
-titleLabel.Text = "💰 AFK Cash System"
+titleLabel.Text = "⭐ AFK COLLECTOR ⭐"
 titleLabel.Parent = mainFrame
 
--- Create AFK Money Button
-local afkButton = Instance.new("TextButton")
-afkButton.Name = "AFKButton"
-afkButton.Size = UDim2.new(0, 280, 0, 50)
-afkButton.Position = UDim2.new(0, 10, 0, 50)
-afkButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
-afkButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-afkButton.TextSize = 18
-afkButton.Font = Enum.Font.GothamBold
-afkButton.Text = "🔄 Start AFK Cash"
-afkButton.Parent = mainFrame
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 10)
+titleCorner.Parent = titleLabel
 
--- Create Cash Label
+-- Create Status Label
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Name = "StatusLabel"
+statusLabel.Size = UDim2.new(0, 330, 0, 30)
+statusLabel.Position = UDim2.new(0, 10, 0, 60)
+statusLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
+statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+statusLabel.TextSize = 14
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.Text = "🟢 Status: Ready"
+statusLabel.Parent = mainFrame
+
+-- Create Cash Label (Big)
 local cashLabel = Instance.new("TextLabel")
 cashLabel.Name = "CashLabel"
-cashLabel.Size = UDim2.new(1, 0, 0, 30)
-cashLabel.Position = UDim2.new(0, 0, 0, 110)
-cashLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-cashLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
-cashLabel.TextSize = 14
-cashLabel.Font = Enum.Font.Gotham
-cashLabel.Text = "Cash: $0"
+cashLabel.Size = UDim2.new(0, 330, 0, 35)
+cashLabel.Position = UDim2.new(0, 10, 0, 95)
+cashLabel.BackgroundColor3 = Color3.fromRGB(40, 60, 100)
+cashLabel.TextColor3 = Color3.fromRGB(0, 255, 150)
+cashLabel.TextSize = 20
+cashLabel.Font = Enum.Font.GothamBold
+cashLabel.Text = "💰 Cash: $0"
 cashLabel.Parent = mainFrame
 
+local cashCorner = Instance.new("UICorner")
+cashCorner.CornerRadius = UDim.new(0, 8)
+cashCorner.Parent = cashLabel
+
+-- Create Collected Counter
+local collectedLabel = Instance.new("TextLabel")
+collectedLabel.Name = "CollectedLabel"
+collectedLabel.Size = UDim2.new(0, 330, 0, 25)
+collectedLabel.Position = UDim2.new(0, 10, 0, 135)
+collectedLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 80)
+collectedLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
+collectedLabel.TextSize = 12
+collectedLabel.Font = Enum.Font.Gotham
+collectedLabel.Text = "📦 Collected This Session: 0"
+collectedLabel.Parent = mainFrame
+
+-- Create Start/Stop Button
+local controlButton = Instance.new("TextButton")
+controlButton.Name = "ControlButton"
+controlButton.Size = UDim2.new(0, 330, 0, 40)
+controlButton.Position = UDim2.new(0, 10, 0, 165)
+controlButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+controlButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+controlButton.TextSize = 16
+controlButton.Font = Enum.Font.GothamBold
+controlButton.Text = "▶️ START COLLECTING"
+controlButton.Parent = mainFrame
+
+local buttonCorner = Instance.new("UICorner")
+buttonCorner.CornerRadius = UDim.new(0, 10)
+buttonCorner.Parent = controlButton
+
 -- Variables
-local isAFKActive = false
-local afkLoopActive = false
-local cashPerSecond = 50
+local isCollecting = false
+local totalCollected = 0
+local collectZones = {}
+local lastCashValue = cash.Value
+
+-- Find all Collect Zones
+local function findCollectZones()
+	local workspace = game:GetService("Workspace")
+	for _, zone in pairs(workspace:GetDescendants()) do
+		if zone.Name:match("Collect") or zone.Name:match("collect") or zone.Name:match("Zone") then
+			if zone:IsA("BasePart") then
+				table.insert(collectZones, zone)
+			end
+		end
+	end
+	print("Found " .. #collectZones .. " collect zones")
+end
+
+findCollectZones()
 
 -- Update Cash Label
 local function updateCashLabel()
-	cashLabel.Text = "Cash: $" .. tostring(math.floor(cash.Value))
+	cashLabel.Text = "💰 Cash: $" .. tostring(math.floor(cash.Value))
+	if cash.Value > lastCashValue then
+		totalCollected = totalCollected + (cash.Value - lastCashValue)
+		collectedLabel.Text = "📦 Collected This Session: " .. tostring(math.floor(totalCollected))
+		lastCashValue = cash.Value
+		
+		-- Pulse effect
+		cashLabel.TextSize = 22
+		game:GetService("TweenService"):Create(
+			cashLabel,
+			TweenInfo.new(0.3),
+			{TextSize = 20}
+		):Play()
+	end
 end
 
 cash.Changed:Connect(updateCashLabel)
 updateCashLabel()
 
--- AFK Cash Loop
-local function startAFKCash()
-	if afkLoopActive then return end
-	afkLoopActive = true
-	isAFKActive = true
-	afkButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-	afkButton.Text = "⏹️ Stop AFK Cash"
+-- Auto-move to Collect Zones
+local function moveToZone()
+	if not isCollecting then return end
 	
-	while isAFKActive do
-		cash.Value = cash.Value + cashPerSecond
-		wait(1)
+	while isCollecting do
+		if #collectZones > 0 then
+			local zone = collectZones[math.random(1, #collectZones)]
+			if zone and zone.Parent then
+				statusLabel.Text = "🔵 Status: Moving to Zone..."
+				humanoidRootPart.CFrame = zone.CFrame + Vector3.new(0, 3, 0)
+				wait(0.5)
+			end
+		end
+		wait(0.1)
 	end
 end
 
--- Stop AFK Cash
-local function stopAFKCash()
-	isAFKActive = false
-	afkLoopActive = false
-	afkButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
-	afkButton.Text = "🔄 Start AFK Cash"
+-- Animation Loop
+local function animateGUI()
+	while isCollecting do
+		-- Floating animation
+		mainFrame.Position = UDim2.new(0.5, -175, 0, 20 + math.sin(tick() * 2) * 5)
+		wait(0.05)
+	end
+end
+
+-- Start Collecting
+local function startCollecting()
+	if isCollecting then return end
+	isCollecting = true
+	statusLabel.Text = "🟢 Status: Collecting..."
+	statusLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
+	controlButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+	controlButton.Text = "⏹️ STOP COLLECTING"
+	
+	-- Start animations and movement in parallel
+	task.spawn(moveToZone)
+	task.spawn(animateGUI)
+end
+
+-- Stop Collecting
+local function stopCollecting()
+	isCollecting = false
+	statusLabel.Text = "🟡 Status: Stopped"
+	statusLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
+	controlButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+	controlButton.Text = "▶️ START COLLECTING"
+	mainFrame.Position = UDim2.new(0.5, -175, 0, 20)
 end
 
 -- Button Click Event
-afkButton.MouseButton1Click:Connect(function()
-	if isAFKActive then
-		stopAFKCash()
+controlButton.MouseButton1Click:Connect(function()
+	if isCollecting then
+		stopCollecting()
 	else
-		startAFKCash()
+		startCollecting()
 	end
 end)
 
--- Cleanup on player leaving
+-- Cleanup
 player.AncestryChanged:Connect(function()
 	if not player.Parent then
-		isAFKActive = false
-		afkLoopActive = false
+		isCollecting = false
 	end
 end)
