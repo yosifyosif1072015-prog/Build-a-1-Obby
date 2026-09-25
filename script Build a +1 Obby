@@ -1,129 +1,192 @@
--- Auto Buy Shop Items
--- Works by detecting buttons in the shop UI such as Buy, Purchase, Candy Keyboard, Chocolate Keyboard.
--- If your shop uses different texts, this script will still try to click buttons containing the item names.
-
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
+-- Wait for ASMR Placement Remotes
+local asmrPlacement = ReplicatedStorage:WaitForChild("ASMRPlacementRemotes")
+local requestPlace = asmrPlacement:WaitForChild("RequestPlaceASMR")
+
+-- Create GUI
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "AutoBuyShopGui"
+screenGui.Name = "AutoBuyASMRGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
-local main = Instance.new("Frame")
-main.Size = UDim2.new(0, 260, 0, 120)
-main.Position = UDim2.new(0.5, -130, 0, 20)
-main.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
-main.BorderSizePixel = 0
-main.Parent = screenGui
+-- Create Main Frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 320, 0, 200)
+mainFrame.Position = UDim2.new(0.5, -160, 0, 20)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BorderSizePixel = 2
+mainFrame.BorderColor3 = Color3.fromRGB(0, 150, 255)
+mainFrame.Parent = screenGui
 
 local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 12)
-corner.Parent = main
+corner.CornerRadius = UDim.new(0, 8)
+corner.Parent = mainFrame
 
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 28)
-title.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
-title.Text = "Auto Buy Shop"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.Font = Enum.Font.GothamBold
-title.TextSize = 18
-title.Parent = main
+-- Title Label
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Name = "TitleLabel"
+titleLabel.Size = UDim2.new(1, 0, 0, 40)
+titleLabel.Position = UDim2.new(0, 0, 0, 0)
+titleLabel.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextSize = 20
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.Text = "🛒 Auto Buy ASMR Shop"
+titleLabel.Parent = mainFrame
 
-local status = Instance.new("TextLabel")
-status.Size = UDim2.new(1, -20, 0, 18)
-status.Position = UDim2.new(0, 10, 0, 36)
-status.BackgroundTransparency = 1
-status.Text = "Ready"
-status.TextColor3 = Color3.fromRGB(120, 255, 120)
-status.Font = Enum.Font.Gotham
-status.TextSize = 12
-status.Parent = main
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 8)
+titleCorner.Parent = titleLabel
 
-local button = Instance.new("TextButton")
-button.Size = UDim2.new(1, -20, 0, 38)
-button.Position = UDim2.new(0, 10, 0, 62)
-button.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
-button.Text = "Start Buy All"
-button.TextColor3 = Color3.fromRGB(255, 255, 255)
-button.Font = Enum.Font.GothamBold
-button.TextSize = 15
-button.Parent = main
+-- Buy Candy Keyboard Button
+local candyButton = Instance.new("TextButton")
+candyButton.Name = "CandyButton"
+candyButton.Size = UDim2.new(0, 150, 0, 40)
+candyButton.Position = UDim2.new(0, 10, 0, 50)
+candyButton.BackgroundColor3 = Color3.fromRGB(255, 100, 200)
+candyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+candyButton.TextSize = 14
+candyButton.Font = Enum.Font.GothamBold
+candyButton.Text = "🍬 Candy KB ($1K)"
+candyButton.Parent = mainFrame
 
-local btnCorner = Instance.new("UICorner")
-btnCorner.CornerRadius = UDim.new(0, 10)
-btnCorner.Parent = button
+local candyCorner = Instance.new("UICorner")
+candyCorner.CornerRadius = UDim.new(0, 6)
+candyCorner.Parent = candyButton
 
-local isRunning = false
+-- Buy Chocolate Keyboard Button
+local chocolateButton = Instance.new("TextButton")
+chocolateButton.Name = "ChocolateButton"
+chocolateButton.Size = UDim2.new(0, 150, 0, 40)
+chocolateButton.Position = UDim2.new(0, 160, 0, 50)
+chocolateButton.BackgroundColor3 = Color3.fromRGB(139, 69, 19)
+chocolateButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+chocolateButton.TextSize = 14
+chocolateButton.Font = Enum.Font.GothamBold
+chocolateButton.Text = "🍫 Choco KB ($35)"
+chocolateButton.Parent = mainFrame
 
-local function buttonTextMatches(text)
-    local lower = text:lower()
-    return lower:find("buy") or lower:find("purchase") or lower:find("candy") or lower:find("chocolate") or lower:find("keyboard")
+local chocoCorner = Instance.new("UICorner")
+chocoCorner.CornerRadius = UDim.new(0, 6)
+chocoCorner.Parent = chocolateButton
+
+-- Buy All Button
+local buyAllButton = Instance.new("TextButton")
+buyAllButton.Name = "BuyAllButton"
+buyAllButton.Size = UDim2.new(0, 300, 0, 40)
+buyAllButton.Position = UDim2.new(0, 10, 0, 100)
+buyAllButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+buyAllButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+buyAllButton.TextSize = 16
+buyAllButton.Font = Enum.Font.GothamBold
+buyAllButton.Text = "✨ Buy All (Auto)"
+buyAllButton.Parent = mainFrame
+
+local buyAllCorner = Instance.new("UICorner")
+buyAllCorner.CornerRadius = UDim.new(0, 6)
+buyAllCorner.Parent = buyAllButton
+
+-- Status Label
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Name = "StatusLabel"
+statusLabel.Size = UDim2.new(1, -20, 0, 35)
+statusLabel.Position = UDim2.new(0, 10, 0, 150)
+statusLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+statusLabel.TextSize = 12
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.Text = "Ready to buy!"
+statusLabel.Parent = mainFrame
+
+local statusCorner = Instance.new("UICorner")
+statusCorner.CornerRadius = UDim.new(0, 4)
+statusCorner.Parent = statusLabel
+
+-- Variables
+local isBuying = false
+
+-- Function to buy single item
+local function buyItem(itemName)
+	print("Buying:", itemName)
+	requestPlace:FireServer(itemName)
+	statusLabel.Text = "Bought: " .. itemName
+	task.wait(0.5)
 end
 
-local function clickButtonsInShop()
-    for _, obj in ipairs(playerGui:GetDescendants()) do
-        if obj:IsA("TextButton") then
-            local txt = obj.Text or ""
-            if buttonTextMatches(txt) then
-                obj:Activate()
-                wait(0.18)
-            end
-        end
-    end
+-- Function to buy all items
+local function buyAll()
+	if isBuying then return end
+	isBuying = true
+	buyAllButton.Text = "⏳ Buying All..."
+	buyAllButton.BackgroundColor3 = Color3.fromRGB(200, 100, 0)
+	
+	task.spawn(function()
+		while isBuying do
+			buyItem("Candy Keyboard")
+			buyItem("Chocolate Keyboard")
+			task.wait(1)
+		end
+	end)
 end
 
-local function buyLoop()
-    while isRunning do
-        status.Text = "Buying..."
-        status.TextColor3 = Color3.fromRGB(120, 255, 120)
-        clickButtonsInShop()
-        wait(0.3)
-    end
-end
-
-button.MouseButton1Click:Connect(function()
-    if isRunning then
-        isRunning = false
-        button.Text = "Start Buy All"
-        button.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
-        status.Text = "Stopped"
-        status.TextColor3 = Color3.fromRGB(255, 200, 100)
-    else
-        isRunning = true
-        button.Text = "Stop Buy All"
-        button.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-        task.spawn(buyLoop)
-    end
+-- Button Events
+candyButton.MouseButton1Click:Connect(function()
+	buyItem("Candy Keyboard")
 end)
 
--- Optional: keep the UI draggable
+chocolateButton.MouseButton1Click:Connect(function()
+	buyItem("Chocolate Keyboard")
+end)
+
+buyAllButton.MouseButton1Click:Connect(function()
+	if isBuying then
+		isBuying = false
+		buyAllButton.Text = "✨ Buy All (Auto)"
+		buyAllButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+		statusLabel.Text = "Stopped!"
+	else
+		buyAll()
+	end
+end)
+
+-- Draggable GUI
 local dragging = false
 local dragStart
 local startPos
 
-main.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = main.Position
-    end
+mainFrame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = mainFrame.Position
+	end
 end)
 
-main.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = false
-    end
+mainFrame.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = false
+	end
 end)
 
 game:GetService("UserInputService").InputChanged:Connect(function(input)
-    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local delta = input.Position - dragStart
-        main.Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
-        )
-    end
+	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = input.Position - dragStart
+		mainFrame.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+-- Cleanup
+player.AncestryChanged:Connect(function()
+	if not player.Parent then
+		isBuying = false
+	end
 end)
