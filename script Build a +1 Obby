@@ -1,149 +1,129 @@
+-- Auto Buy Shop Items
+-- Works by detecting buttons in the shop UI such as Buy, Purchase, Candy Keyboard, Chocolate Keyboard.
+-- If your shop uses different texts, this script will still try to click buttons containing the item names.
+
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
-local cash = player:WaitForChild("leaderstats"):WaitForChild("Cash")
 
--- Create GUI
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "AFKMoneyGui"
+screenGui.Name = "AutoBuyShopGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
--- Create Main Frame
-local mainFrame = Instance.new("Frame")
-mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 300, 0, 150)
-mainFrame.Position = UDim2.new(0.5, -150, 0, 20)
-mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-mainFrame.BorderSizePixel = 2
-mainFrame.BorderColor3 = Color3.fromRGB(0, 100, 255)
-mainFrame.Parent = screenGui
+local main = Instance.new("Frame")
+main.Size = UDim2.new(0, 260, 0, 120)
+main.Position = UDim2.new(0.5, -130, 0, 20)
+main.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
+main.BorderSizePixel = 0
+main.Parent = screenGui
 
--- Create Title Label
-local titleLabel = Instance.new("TextLabel")
-titleLabel.Name = "TitleLabel"
-titleLabel.Size = UDim2.new(1, 0, 0, 40)
-titleLabel.Position = UDim2.new(0, 0, 0, 0)
-titleLabel.BackgroundColor3 = Color3.fromRGB(0, 100, 255)
-titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.TextSize = 20
-titleLabel.Font = Enum.Font.GothamBold
-titleLabel.Text = "💰 Collect Zone"
-titleLabel.Parent = mainFrame
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = main
 
--- Create Collect Button
-local collectButton = Instance.new("TextButton")
-collectButton.Name = "CollectButton"
-collectButton.Size = UDim2.new(0, 280, 0, 50)
-collectButton.Position = UDim2.new(0, 10, 0, 50)
-collectButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
-collectButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-collectButton.TextSize = 18
-collectButton.Font = Enum.Font.GothamBold
-collectButton.Text = "🔄 Start Collect"
-collectButton.Parent = mainFrame
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 28)
+title.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+title.Text = "Auto Buy Shop"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+title.Parent = main
 
--- Create Cash Label
-local cashLabel = Instance.new("TextLabel")
-cashLabel.Name = "CashLabel"
-cashLabel.Size = UDim2.new(1, 0, 0, 30)
-cashLabel.Position = UDim2.new(0, 0, 0, 110)
-cashLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-cashLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
-cashLabel.TextSize = 14
-cashLabel.Font = Enum.Font.Gotham
-cashLabel.Text = "Cash: $0"
-cashLabel.Parent = mainFrame
+local status = Instance.new("TextLabel")
+status.Size = UDim2.new(1, -20, 0, 18)
+status.Position = UDim2.new(0, 10, 0, 36)
+status.BackgroundTransparency = 1
+status.Text = "Ready"
+status.TextColor3 = Color3.fromRGB(120, 255, 120)
+status.Font = Enum.Font.Gotham
+status.TextSize = 12
+status.Parent = main
 
--- Variables
-local isCollecting = false
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
+local button = Instance.new("TextButton")
+button.Size = UDim2.new(1, -20, 0, 38)
+button.Position = UDim2.new(0, 10, 0, 62)
+button.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+button.Text = "Start Buy All"
+button.TextColor3 = Color3.fromRGB(255, 255, 255)
+button.Font = Enum.Font.GothamBold
+button.TextSize = 15
+button.Parent = main
 
--- Update Cash Label
-local function updateCashLabel()
-	cashLabel.Text = "Cash: $" .. tostring(math.floor(cash.Value))
+local btnCorner = Instance.new("UICorner")
+btnCorner.CornerRadius = UDim.new(0, 10)
+btnCorner.Parent = button
+
+local isRunning = false
+
+local function buttonTextMatches(text)
+    local lower = text:lower()
+    return lower:find("buy") or lower:find("purchase") or lower:find("candy") or lower:find("chocolate") or lower:find("keyboard")
 end
 
-cash.Changed:Connect(updateCashLabel)
-updateCashLabel()
-
--- Find Collect Zones
-local function findCollectZones()
-	local zones = {}
-	for _, obj in ipairs(workspace:GetDescendants()) do
-		if obj:IsA("BasePart") then
-			local name = obj.Name:lower()
-			if string.find(name, "collect") then
-				table.insert(zones, obj)
-			end
-		end
-	end
-	return zones
+local function clickButtonsInShop()
+    for _, obj in ipairs(playerGui:GetDescendants()) do
+        if obj:IsA("TextButton") then
+            local txt = obj.Text or ""
+            if buttonTextMatches(txt) then
+                obj:Activate()
+                wait(0.18)
+            end
+        end
+    end
 end
 
--- Get Nearest Zone
-local function getNearestZone()
-	local zones = findCollectZones()
-	local nearest = nil
-	local minDist = math.huge
-	
-	for _, zone in ipairs(zones) do
-		if zone and zone.Parent then
-			local dist = (zone.Position - hrp.Position).Magnitude
-			if dist < minDist then
-				minDist = dist
-				nearest = zone
-			end
-		end
-	end
-	
-	return nearest
+local function buyLoop()
+    while isRunning do
+        status.Text = "Buying..."
+        status.TextColor3 = Color3.fromRGB(120, 255, 120)
+        clickButtonsInShop()
+        wait(0.3)
+    end
 end
 
--- Collect Loop
-local function startCollecting()
-	if isCollecting then return end
-	isCollecting = true
-	collectButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-	collectButton.Text = "⏹️ Stop Collect"
-	
-	while isCollecting do
-		local zone = getNearestZone()
-		if zone then
-			hrp.CFrame = zone.CFrame + Vector3.new(0, 3, 0)
-		end
-		wait(0.2)
-	end
-end
-
--- Stop Collecting
-local function stopCollecting()
-	isCollecting = false
-	collectButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
-	collectButton.Text = "🔄 Start Collect"
-end
-
--- Button Click Event
-collectButton.MouseButton1Click:Connect(function()
-	if isCollecting then
-		stopCollecting()
-	else
-		startCollecting()
-	end
+button.MouseButton1Click:Connect(function()
+    if isRunning then
+        isRunning = false
+        button.Text = "Start Buy All"
+        button.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+        status.Text = "Stopped"
+        status.TextColor3 = Color3.fromRGB(255, 200, 100)
+    else
+        isRunning = true
+        button.Text = "Stop Buy All"
+        button.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+        task.spawn(buyLoop)
+    end
 end)
 
--- Character respawn
-player.CharacterAdded:Connect(function(newChar)
-	character = newChar
-	hrp = character:WaitForChild("HumanoidRootPart")
-	if isCollecting then
-		stopCollecting()
-	end
+-- Optional: keep the UI draggable
+local dragging = false
+local dragStart
+local startPos
+
+main.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = main.Position
+    end
 end)
 
--- Cleanup on player leaving
-player.AncestryChanged:Connect(function()
-	if not player.Parent then
-		isCollecting = false
-	end
+main.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        main.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
 end)
