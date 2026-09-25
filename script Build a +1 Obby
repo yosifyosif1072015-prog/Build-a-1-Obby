@@ -2,153 +2,161 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
-local workerRemotes = ReplicatedStorage:WaitForChild("WorkerRemotes")
-local buyWorker = workerRemotes:WaitForChild("BuyWorker")
+-- Find all purchase remotes
+print("=== FINDING ALL PURCHASE REMOTES ===")
 
--- GUI
+local purchaseRemotes = {}
+
+for _, item in ipairs(ReplicatedStorage:GetDescendants()) do
+	if item:IsA("RemoteEvent") or item:IsA("RemoteFunction") then
+		local name = item.Name:lower()
+		if name:find("buy") or name:find("purchase") or name:find("shop") or name:find("item") then
+			table.insert(purchaseRemotes, {name = item.Name, path = item:GetFullName()})
+			print("✓ Found:", item:GetFullName())
+		end
+	end
+end
+
+print("=== CREATING GUI ===")
+
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "AutoBuyASMRGui"
+screenGui.Name = "ShopDebugGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 320, 0, 170)
-mainFrame.Position = UDim2.new(0.5, -160, 0, 20)
+mainFrame.Size = UDim2.new(0, 400, 0, 300)
+mainFrame.Position = UDim2.new(0.5, -200, 0, 50)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.BorderSizePixel = 2
 mainFrame.BorderColor3 = Color3.fromRGB(0, 150, 255)
 mainFrame.Parent = screenGui
 
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 8)
-corner.Parent = mainFrame
-
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Name = "TitleLabel"
-titleLabel.Size = UDim2.new(1, 0, 0, 38)
+titleLabel.Size = UDim2.new(1, 0, 0, 30)
 titleLabel.Position = UDim2.new(0, 0, 0, 0)
 titleLabel.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.TextSize = 20
+titleLabel.TextSize = 18
 titleLabel.Font = Enum.Font.GothamBold
-titleLabel.Text = "🛒 Auto Buy Shop"
+titleLabel.Text = "🛍️ Shop Auto Buy - DEBUG"
 titleLabel.Parent = mainFrame
 
-local buyCandyButton = Instance.new("TextButton")
-buyCandyButton.Name = "BuyCandyButton"
-buyCandyButton.Size = UDim2.new(0, 140, 0, 42)
-buyCandyButton.Position = UDim2.new(0, 10, 0, 52)
-buyCandyButton.BackgroundColor3 = Color3.fromRGB(255, 100, 200)
-buyCandyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-buyCandyButton.TextSize = 14
-buyCandyButton.Font = Enum.Font.GothamBold
-buyCandyButton.Text = "Candy KB"
-buyCandyButton.Parent = mainFrame
+local scrollFrame = Instance.new("ScrollingFrame")
+scrollFrame.Name = "ScrollFrame"
+scrollFrame.Size = UDim2.new(1, -20, 1, -70)
+scrollFrame.Position = UDim2.new(0, 10, 0, 40)
+scrollFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+scrollFrame.BorderSizePixel = 0
+scrollFrame.ScrollBarThickness = 12
+scrollFrame.Parent = mainFrame
 
-local buyChocolateButton = Instance.new("TextButton")
-buyChocolateButton.Name = "BuyChocolateButton"
-buyChocolateButton.Size = UDim2.new(0, 140, 0, 42)
-buyChocolateButton.Position = UDim2.new(0, 170, 0, 52)
-buyChocolateButton.BackgroundColor3 = Color3.fromRGB(139, 69, 19)
-buyChocolateButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-buyChocolateButton.TextSize = 14
-buyChocolateButton.Font = Enum.Font.GothamBold
-buyChocolateButton.Text = "Chocolate KB"
-buyChocolateButton.Parent = mainFrame
+local uiListLayout = Instance.new("UIListLayout")
+uiListLayout.Parent = scrollFrame
+uiListLayout.Padding = UDim.new(0, 5)
 
+-- اختبر كل Remotes
+local testItems = {
+	"Candy Keyboard",
+	"Chocolate Keyboard",
+	"CandyKeyboard",
+	"ChocolateKeyboard",
+	"Treadmill",
+	"x1 Treadmill",
+	"Shoes",
+	"x1 Shoes",
+	"WaxNeedoh"
+}
+
+for _, remoteName in ipairs(purchaseRemotes) do
+	local button = Instance.new("TextButton")
+	button.Name = "TestButton_" .. remoteName.name
+	button.Size = UDim2.new(1, -10, 0, 40)
+	button.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+	button.TextColor3 = Color3.fromRGB(255, 255, 255)
+	button.TextSize = 12
+	button.Font = Enum.Font.Gotham
+	button.Text = "Test: " .. remoteName.name
+	button.Parent = scrollFrame
+
+	button.MouseButton1Click:Connect(function()
+		print("Testing Remote:", remoteName.path)
+		
+		local parts = string.split(remoteName.path, ".")
+		local remote = ReplicatedStorage
+		
+		for _, part in ipairs(parts) do
+			remote = remote:FindFirstChild(part)
+			if not remote then break end
+		end
+		
+		if remote then
+			for _, itemName in ipairs(testItems) do
+				print("  -> Firing:", itemName)
+				if remote:IsA("RemoteEvent") then
+					remote:FireServer(itemName)
+				elseif remote:IsA("RemoteFunction") then
+					remote:InvokeServer(itemName)
+				end
+				task.wait(0.3)
+			end
+		end
+	end)
+end
+
+-- زر للشراء التلقائي
 local buyAllButton = Instance.new("TextButton")
 buyAllButton.Name = "BuyAllButton"
-buyAllButton.Size = UDim2.new(1, -20, 0, 42)
-buyAllButton.Position = UDim2.new(0, 10, 0, 110)
+buyAllButton.Size = UDim2.new(1, -20, 0, 40)
+buyAllButton.Position = UDim2.new(0, 10, 1, -50)
 buyAllButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
 buyAllButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-buyAllButton.TextSize = 16
+buyAllButton.TextSize = 14
 buyAllButton.Font = Enum.Font.GothamBold
-buyAllButton.Text = "Buy All"
+buyAllButton.Text = "🛒 BUY CANDY + CHOCOLATE (Auto)"
 buyAllButton.Parent = mainFrame
 
-local statusLabel = Instance.new("TextLabel")
-statusLabel.Name = "StatusLabel"
-statusLabel.Size = UDim2.new(1, -20, 0, 26)
-statusLabel.Position = UDim2.new(0, 10, 0, 160)
-statusLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
-statusLabel.TextSize = 12
-statusLabel.Font = Enum.Font.Gotham
-statusLabel.Text = "Ready"
-statusLabel.Parent = mainFrame
-
-local function setStatus(text, color)
-	statusLabel.Text = text
-	statusLabel.TextColor3 = color or Color3.fromRGB(100, 255, 100)
-end
-
-local isBuyingAll = false
-
-local function buyItem(itemName)
-	print("Buying:", itemName)
-	buyWorker:FireServer(itemName)
-	setStatus("Buying: " .. itemName, Color3.fromRGB(255, 220, 100))
-	task.wait(0.5)
-end
-
-buyCandyButton.MouseButton1Click:Connect(function()
-	buyItem("Candy Keyboard")
-end)
-
-buyChocolateButton.MouseButton1Click:Connect(function()
-	buyItem("Chocolate Keyboard")
-end)
+local isBuying = false
 
 buyAllButton.MouseButton1Click:Connect(function()
-	if isBuyingAll then
-		isBuyingAll = false
-		buyAllButton.Text = "Buy All"
-		setStatus("Stopped", Color3.fromRGB(255, 180, 80))
+	if isBuying then
+		isBuying = false
+		buyAllButton.Text = "🛒 BUY CANDY + CHOCOLATE (Auto)"
+		buyAllButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
 		return
 	end
 
-	isBuyingAll = true
-	buyAllButton.Text = "Stop"
-	setStatus("Auto buying...", Color3.fromRGB(100, 255, 100))
+	isBuying = true
+	buyAllButton.Text = "⏸️ STOP"
+	buyAllButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
 
 	task.spawn(function()
-		while isBuyingAll do
-			buyItem("Candy Keyboard")
-			buyItem("Chocolate Keyboard")
-			task.wait(0.5)
+		while isBuying do
+			-- جرّب كل Remotes
+			for _, remoteName in ipairs(purchaseRemotes) do
+				local parts = string.split(remoteName.path, ".")
+				local remote = ReplicatedStorage
+				
+				for _, part in ipairs(parts) do
+					remote = remote:FindFirstChild(part)
+					if not remote then break end
+				end
+				
+				if remote then
+					print("Trying Remote:", remoteName.name)
+					if remote:IsA("RemoteEvent") then
+						remote:FireServer("Candy Keyboard")
+						task.wait(0.3)
+						remote:FireServer("Chocolate Keyboard")
+					end
+				end
+			end
+			
+			task.wait(1)
 		end
 	end)
 end)
 
--- draggable GUI
-local dragging = false
-local dragStart
-local startPos
-
-mainFrame.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = true
-		dragStart = input.Position
-		startPos = mainFrame.Position
-	end
-end)
-
-mainFrame.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = false
-	end
-end)
-
-game:GetService("UserInputService").InputChanged:Connect(function(input)
-	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-		local delta = input.Position - dragStart
-		mainFrame.Position = UDim2.new(
-			startPos.X.Scale,
-			startPos.X.Offset + delta.X,
-			startPos.Y.Scale,
-			startPos.Y.Offset + delta.Y
-		)
-	end
-end)
+print("=== SHOP DEBUG GUI CREATED ===")
