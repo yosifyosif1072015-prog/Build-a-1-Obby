@@ -4,87 +4,79 @@ local leaderstats = player:WaitForChild("leaderstats")
 local cash = leaderstats:FindFirstChild("Cash")
 
 if not cash then
-    error("Cash not found in leaderstats. Please make sure the value is named 'Cash'.")
+    error("Cash value not found! Make sure it's named 'Cash'")
 end
 
 local character = player.Character or player.CharacterAdded:Wait()
 local hrp = character:WaitForChild("HumanoidRootPart")
-local humanoid = character:WaitForChild("Humanoid")
 
--- UI setup
+-- Create GUI
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "AutoCollectGui"
+screenGui.Name = "CollectGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
+-- Create Main Frame
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 260, 0, 110)
-mainFrame.Position = UDim2.new(0.5, -130, 0, 25)
-mainFrame.BackgroundColor3 = Color3.fromRGB(23, 24, 35)
+mainFrame.Size = UDim2.new(0, 250, 0, 100)
+mainFrame.Position = UDim2.new(0.5, -125, 0, 20)
+mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 50)
 mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
 
 local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 14)
+corner.CornerRadius = UDim.new(0, 12)
 corner.Parent = mainFrame
 
-local gradient = Instance.new("UIGradient")
-gradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(33, 84, 255)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(18, 25, 43))
-})
-gradient.Rotation = 90
-gradient.Parent = mainFrame
+-- Title
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Name = "Title"
+titleLabel.Size = UDim2.new(1, 0, 0, 35)
+titleLabel.Position = UDim2.new(0, 0, 0, 0)
+titleLabel.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextSize = 16
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.Text = "💰 Auto Collect"
+titleLabel.Parent = mainFrame
 
-local title = Instance.new("TextLabel")
-title.Name = "Title"
-title.Size = UDim2.new(1, 0, 0, 30)
-title.Position = UDim2.new(0, 0, 0, 0)
-title.BackgroundTransparency = 1
-title.Text = "Auto Collect"
-title.Font = Enum.Font.GothamBold
-title.TextSize = 18
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.Parent = mainFrame
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 12)
+titleCorner.Parent = titleLabel
 
+-- Status
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Name = "Status"
-statusLabel.Size = UDim2.new(1, -20, 0, 20)
-statusLabel.Position = UDim2.new(0, 10, 0, 34)
+statusLabel.Size = UDim2.new(1, -20, 0, 18)
+statusLabel.Position = UDim2.new(0, 10, 0, 38)
 statusLabel.BackgroundTransparency = 1
-statusLabel.Text = "Waiting..."
+statusLabel.Text = "Ready"
+statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+statusLabel.TextSize = 12
 statusLabel.Font = Enum.Font.Gotham
-statusLabel.TextSize = 13
-statusLabel.TextColor3 = Color3.fromRGB(180, 255, 180)
 statusLabel.Parent = mainFrame
 
-local button = Instance.new("TextButton")
-button.Name = "ToggleButton"
-button.Size = UDim2.new(1, -20, 0, 36)
-button.Position = UDim2.new(0, 10, 0, 62)
-button.BackgroundColor3 = Color3.fromRGB(19, 181, 87)
-button.Text = "Start Collect"
-button.TextColor3 = Color3.fromRGB(255, 255, 255)
-button.Font = Enum.Font.GothamBold
-button.TextSize = 15
-button.Parent = mainFrame
+-- Button
+local collectButton = Instance.new("TextButton")
+collectButton.Name = "CollectButton"
+collectButton.Size = UDim2.new(1, -20, 0, 32)
+collectButton.Position = UDim2.new(0, 10, 0, 60)
+collectButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+collectButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+collectButton.TextSize = 14
+collectButton.Font = Enum.Font.GothamBold
+collectButton.Text = "Start"
+collectButton.Parent = mainFrame
 
 local buttonCorner = Instance.new("UICorner")
-buttonCorner.CornerRadius = UDim.new(0, 10)
-buttonCorner.Parent = button
+buttonCorner.CornerRadius = UDim.new(0, 8)
+buttonCorner.Parent = collectButton
 
--- Draggable UI
+-- Dragging
 local dragging = false
-local dragStart
-local startPos
-
-local function updateDrag(input)
-    if dragging then
-        local delta = input.Position - dragStart
-        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-end
+local dragStart = nil
+local startPos = nil
 
 mainFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -100,98 +92,96 @@ mainFrame.InputEnded:Connect(function(input)
     end
 end)
 
-userInputService = game:GetService("UserInputService")
-userInputService.InputChanged:Connect(function(input)
+game:GetService("UserInputService").InputChanged:Connect(function(input)
     if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        updateDrag(input)
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
     end
 end)
 
--- Collect zone detection
-local function getCollectZones()
-    local list = {}
+-- Variables
+local isCollecting = false
+
+local function findCollectZones()
+    local zones = {}
     for _, obj in ipairs(workspace:GetDescendants()) do
         if obj:IsA("BasePart") then
             local name = obj.Name:lower()
-            if string.find(name, "collect") or string.find(name, "zone") or string.find(name, "cash") then
-                table.insert(list, obj)
+            if string.find(name, "collect") then
+                table.insert(zones, obj)
             end
         end
     end
-    return list
+    return zones
 end
 
-local isActive = false
-local collectZones = {}
-
-local function findNearestZone()
+local function getNearestZone(zones)
     local nearest = nil
-    local nearestDist = math.huge
-    local rootPos = hrp.Position
-
-    for _, zone in ipairs(collectZones) do
-        if zone and zone.Parent and zone:IsA("BasePart") then
-            local dist = (zone.Position - rootPos).Magnitude
-            if dist < nearestDist then
-                nearestDist = dist
+    local minDist = math.huge
+    
+    for _, zone in ipairs(zones) do
+        if zone and zone.Parent then
+            local dist = (zone.Position - hrp.Position).Magnitude
+            if dist < minDist then
+                minDist = dist
                 nearest = zone
             end
         end
     end
-
+    
     return nearest
 end
 
-local function moveToCollectZone()
-    if not isActive then return end
-
-    while isActive do
-        collectZones = getCollectZones()
-
-        if #collectZones > 0 then
-            local zone = findNearestZone()
+local function collectZones()
+    while isCollecting do
+        local zones = findCollectZones()
+        if #zones > 0 then
+            local zone = getNearestZone(zones)
             if zone then
-                statusLabel.Text = "Moving to zone..."
+                statusLabel.Text = "Moving..."
                 hrp.CFrame = zone.CFrame + Vector3.new(0, 3, 0)
-                wait(0.3)
             end
         else
-            statusLabel.Text = "No collect zone found"
+            statusLabel.Text = "No zones"
         end
-
-        wait(0.25)
+        wait(0.2)
     end
 end
 
-local function startCollecting()
-    if isActive then return end
-    isActive = true
-    button.BackgroundColor3 = Color3.fromRGB(200, 64, 64)
-    button.Text = "Stop Collect"
+local function startCollect()
+    if isCollecting then return end
+    isCollecting = true
+    collectButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+    collectButton.Text = "Stop"
     statusLabel.Text = "Collecting..."
-    task.spawn(moveToCollectZone)
+    task.spawn(collectZones)
 end
 
-local function stopCollecting()
-    isActive = false
-    button.BackgroundColor3 = Color3.fromRGB(19, 181, 87)
-    button.Text = "Start Collect"
+local function stopCollect()
+    isCollecting = false
+    collectButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+    collectButton.Text = "Start"
     statusLabel.Text = "Stopped"
 end
 
-button.MouseButton1Click:Connect(function()
-    if isActive then
-        stopCollecting()
+collectButton.MouseButton1Click:Connect(function()
+    if isCollecting then
+        stopCollect()
     else
-        startCollecting()
+        startCollect()
     end
 end)
 
--- Reconnect if character respawns
+-- Character respawn
 player.CharacterAdded:Connect(function(newChar)
     character = newChar
     hrp = character:WaitForChild("HumanoidRootPart")
-    humanoid = character:WaitForChild("Humanoid")
+    if isCollecting then
+        stopCollect()
+    end
 end)
-
-statusLabel.Text = "Ready"
