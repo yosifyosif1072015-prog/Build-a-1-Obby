@@ -1,215 +1,197 @@
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-local cash = player:WaitForChild("leaderstats"):WaitForChild("Cash")
+local leaderstats = player:WaitForChild("leaderstats")
+local cash = leaderstats:FindFirstChild("Cash")
 
--- Create GUI
+if not cash then
+    error("Cash not found in leaderstats. Please make sure the value is named 'Cash'.")
+end
+
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:WaitForChild("Humanoid")
+
+-- UI setup
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "AFKCollectorGui"
+screenGui.Name = "AutoCollectGui"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
--- Create Main Frame with Animation
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 350, 0, 200)
-mainFrame.Position = UDim2.new(0.5, -175, 0, 20)
-mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 40)
-mainFrame.BorderSizePixel = 3
-mainFrame.BorderColor3 = Color3.fromRGB(0, 150, 255)
+mainFrame.Size = UDim2.new(0, 260, 0, 110)
+mainFrame.Position = UDim2.new(0.5, -130, 0, 25)
+mainFrame.BackgroundColor3 = Color3.fromRGB(23, 24, 35)
+mainFrame.BorderSizePixel = 0
 mainFrame.Parent = screenGui
 
--- Add Corner Radius Effect
 local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 15)
+corner.CornerRadius = UDim.new(0, 14)
 corner.Parent = mainFrame
 
--- Create Gradient Background
 local gradient = Instance.new("UIGradient")
 gradient.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 20, 60)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 40, 80))
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(33, 84, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(18, 25, 43))
 })
-gradient.Rotation = 45
+gradient.Rotation = 90
 gradient.Parent = mainFrame
 
--- Create Title Label with Gradient
-local titleLabel = Instance.new("TextLabel")
-titleLabel.Name = "TitleLabel"
-titleLabel.Size = UDim2.new(1, 0, 0, 50)
-titleLabel.Position = UDim2.new(0, 0, 0, 0)
-titleLabel.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
-titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.TextSize = 22
-titleLabel.Font = Enum.Font.GothamBold
-titleLabel.Text = "⭐ AFK COLLECTOR ⭐"
-titleLabel.Parent = mainFrame
+local title = Instance.new("TextLabel")
+title.Name = "Title"
+title.Size = UDim2.new(1, 0, 0, 30)
+title.Position = UDim2.new(0, 0, 0, 0)
+title.BackgroundTransparency = 1
+title.Text = "Auto Collect"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Parent = mainFrame
 
-local titleCorner = Instance.new("UICorner")
-titleCorner.CornerRadius = UDim.new(0, 10)
-titleCorner.Parent = titleLabel
-
--- Create Status Label
 local statusLabel = Instance.new("TextLabel")
-statusLabel.Name = "StatusLabel"
-statusLabel.Size = UDim2.new(0, 330, 0, 30)
-statusLabel.Position = UDim2.new(0, 10, 0, 60)
-statusLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
-statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
-statusLabel.TextSize = 14
+statusLabel.Name = "Status"
+statusLabel.Size = UDim2.new(1, -20, 0, 20)
+statusLabel.Position = UDim2.new(0, 10, 0, 34)
+statusLabel.BackgroundTransparency = 1
+statusLabel.Text = "Waiting..."
 statusLabel.Font = Enum.Font.Gotham
-statusLabel.Text = "🟢 Status: Ready"
+statusLabel.TextSize = 13
+statusLabel.TextColor3 = Color3.fromRGB(180, 255, 180)
 statusLabel.Parent = mainFrame
 
--- Create Cash Label (Big)
-local cashLabel = Instance.new("TextLabel")
-cashLabel.Name = "CashLabel"
-cashLabel.Size = UDim2.new(0, 330, 0, 35)
-cashLabel.Position = UDim2.new(0, 10, 0, 95)
-cashLabel.BackgroundColor3 = Color3.fromRGB(40, 60, 100)
-cashLabel.TextColor3 = Color3.fromRGB(0, 255, 150)
-cashLabel.TextSize = 20
-cashLabel.Font = Enum.Font.GothamBold
-cashLabel.Text = "💰 Cash: $0"
-cashLabel.Parent = mainFrame
-
-local cashCorner = Instance.new("UICorner")
-cashCorner.CornerRadius = UDim.new(0, 8)
-cashCorner.Parent = cashLabel
-
--- Create Collected Counter
-local collectedLabel = Instance.new("TextLabel")
-collectedLabel.Name = "CollectedLabel"
-collectedLabel.Size = UDim2.new(0, 330, 0, 25)
-collectedLabel.Position = UDim2.new(0, 10, 0, 135)
-collectedLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 80)
-collectedLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
-collectedLabel.TextSize = 12
-collectedLabel.Font = Enum.Font.Gotham
-collectedLabel.Text = "📦 Collected This Session: 0"
-collectedLabel.Parent = mainFrame
-
--- Create Start/Stop Button
-local controlButton = Instance.new("TextButton")
-controlButton.Name = "ControlButton"
-controlButton.Size = UDim2.new(0, 330, 0, 40)
-controlButton.Position = UDim2.new(0, 10, 0, 165)
-controlButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
-controlButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-controlButton.TextSize = 16
-controlButton.Font = Enum.Font.GothamBold
-controlButton.Text = "▶️ START COLLECTING"
-controlButton.Parent = mainFrame
+local button = Instance.new("TextButton")
+button.Name = "ToggleButton"
+button.Size = UDim2.new(1, -20, 0, 36)
+button.Position = UDim2.new(0, 10, 0, 62)
+button.BackgroundColor3 = Color3.fromRGB(19, 181, 87)
+button.Text = "Start Collect"
+button.TextColor3 = Color3.fromRGB(255, 255, 255)
+button.Font = Enum.Font.GothamBold
+button.TextSize = 15
+button.Parent = mainFrame
 
 local buttonCorner = Instance.new("UICorner")
 buttonCorner.CornerRadius = UDim.new(0, 10)
-buttonCorner.Parent = controlButton
+buttonCorner.Parent = button
 
--- Variables
-local isCollecting = false
-local totalCollected = 0
+-- Draggable UI
+local dragging = false
+local dragStart
+local startPos
+
+local function updateDrag(input)
+    if dragging then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end
+
+mainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+    end
+end)
+
+mainFrame.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+userInputService = game:GetService("UserInputService")
+userInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        updateDrag(input)
+    end
+end)
+
+-- Collect zone detection
+local function getCollectZones()
+    local list = {}
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") then
+            local name = obj.Name:lower()
+            if string.find(name, "collect") or string.find(name, "zone") or string.find(name, "cash") then
+                table.insert(list, obj)
+            end
+        end
+    end
+    return list
+end
+
+local isActive = false
 local collectZones = {}
-local lastCashValue = cash.Value
 
--- Find all Collect Zones
-local function findCollectZones()
-	local workspace = game:GetService("Workspace")
-	for _, zone in pairs(workspace:GetDescendants()) do
-		if zone.Name:match("Collect") or zone.Name:match("collect") or zone.Name:match("Zone") then
-			if zone:IsA("BasePart") then
-				table.insert(collectZones, zone)
-			end
-		end
-	end
-	print("Found " .. #collectZones .. " collect zones")
+local function findNearestZone()
+    local nearest = nil
+    local nearestDist = math.huge
+    local rootPos = hrp.Position
+
+    for _, zone in ipairs(collectZones) do
+        if zone and zone.Parent and zone:IsA("BasePart") then
+            local dist = (zone.Position - rootPos).Magnitude
+            if dist < nearestDist then
+                nearestDist = dist
+                nearest = zone
+            end
+        end
+    end
+
+    return nearest
 end
 
-findCollectZones()
+local function moveToCollectZone()
+    if not isActive then return end
 
--- Update Cash Label
-local function updateCashLabel()
-	cashLabel.Text = "💰 Cash: $" .. tostring(math.floor(cash.Value))
-	if cash.Value > lastCashValue then
-		totalCollected = totalCollected + (cash.Value - lastCashValue)
-		collectedLabel.Text = "📦 Collected This Session: " .. tostring(math.floor(totalCollected))
-		lastCashValue = cash.Value
-		
-		-- Pulse effect
-		cashLabel.TextSize = 22
-		game:GetService("TweenService"):Create(
-			cashLabel,
-			TweenInfo.new(0.3),
-			{TextSize = 20}
-		):Play()
-	end
+    while isActive do
+        collectZones = getCollectZones()
+
+        if #collectZones > 0 then
+            local zone = findNearestZone()
+            if zone then
+                statusLabel.Text = "Moving to zone..."
+                hrp.CFrame = zone.CFrame + Vector3.new(0, 3, 0)
+                wait(0.3)
+            end
+        else
+            statusLabel.Text = "No collect zone found"
+        end
+
+        wait(0.25)
+    end
 end
 
-cash.Changed:Connect(updateCashLabel)
-updateCashLabel()
-
--- Auto-move to Collect Zones
-local function moveToZone()
-	if not isCollecting then return end
-	
-	while isCollecting do
-		if #collectZones > 0 then
-			local zone = collectZones[math.random(1, #collectZones)]
-			if zone and zone.Parent then
-				statusLabel.Text = "🔵 Status: Moving to Zone..."
-				humanoidRootPart.CFrame = zone.CFrame + Vector3.new(0, 3, 0)
-				wait(0.5)
-			end
-		end
-		wait(0.1)
-	end
-end
-
--- Animation Loop
-local function animateGUI()
-	while isCollecting do
-		-- Floating animation
-		mainFrame.Position = UDim2.new(0.5, -175, 0, 20 + math.sin(tick() * 2) * 5)
-		wait(0.05)
-	end
-end
-
--- Start Collecting
 local function startCollecting()
-	if isCollecting then return end
-	isCollecting = true
-	statusLabel.Text = "🟢 Status: Collecting..."
-	statusLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
-	controlButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-	controlButton.Text = "⏹️ STOP COLLECTING"
-	
-	-- Start animations and movement in parallel
-	task.spawn(moveToZone)
-	task.spawn(animateGUI)
+    if isActive then return end
+    isActive = true
+    button.BackgroundColor3 = Color3.fromRGB(200, 64, 64)
+    button.Text = "Stop Collect"
+    statusLabel.Text = "Collecting..."
+    task.spawn(moveToCollectZone)
 end
 
--- Stop Collecting
 local function stopCollecting()
-	isCollecting = false
-	statusLabel.Text = "🟡 Status: Stopped"
-	statusLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
-	controlButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
-	controlButton.Text = "▶️ START COLLECTING"
-	mainFrame.Position = UDim2.new(0.5, -175, 0, 20)
+    isActive = false
+    button.BackgroundColor3 = Color3.fromRGB(19, 181, 87)
+    button.Text = "Start Collect"
+    statusLabel.Text = "Stopped"
 end
 
--- Button Click Event
-controlButton.MouseButton1Click:Connect(function()
-	if isCollecting then
-		stopCollecting()
-	else
-		startCollecting()
-	end
+button.MouseButton1Click:Connect(function()
+    if isActive then
+        stopCollecting()
+    else
+        startCollecting()
+    end
 end)
 
--- Cleanup
-player.AncestryChanged:Connect(function()
-	if not player.Parent then
-		isCollecting = false
-	end
+-- Reconnect if character respawns
+player.CharacterAdded:Connect(function(newChar)
+    character = newChar
+    hrp = character:WaitForChild("HumanoidRootPart")
+    humanoid = character:WaitForChild("Humanoid")
 end)
+
+statusLabel.Text = "Ready"
