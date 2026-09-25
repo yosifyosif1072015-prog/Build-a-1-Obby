@@ -1,1 +1,106 @@
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local money = player:WaitForChild("leaderstats"):WaitForChild("Money")
 
+-- Create GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "AFKMoneyGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+
+-- Create Main Frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 300, 0, 150)
+mainFrame.Position = UDim2.new(0.5, -150, 0, 20)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BorderSizePixel = 2
+mainFrame.BorderColor3 = Color3.fromRGB(0, 100, 255)
+mainFrame.Parent = screenGui
+
+-- Create Title Label
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Name = "TitleLabel"
+titleLabel.Size = UDim2.new(1, 0, 0, 40)
+titleLabel.Position = UDim2.new(0, 0, 0, 0)
+titleLabel.BackgroundColor3 = Color3.fromRGB(0, 100, 255)
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextSize = 20
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.Text = "💰 AFK Money System"
+titleLabel.Parent = mainFrame
+
+-- Create AFK Money Button
+local afkButton = Instance.new("TextButton")
+afkButton.Name = "AFKButton"
+afkButton.Size = UDim2.new(0, 280, 0, 50)
+afkButton.Position = UDim2.new(0, 10, 0, 50)
+afkButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+afkButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+afkButton.TextSize = 18
+afkButton.Font = Enum.Font.GothamBold
+afkButton.Text = "🔄 Start AFK Money"
+afkButton.Parent = mainFrame
+
+-- Create Money Label
+local moneyLabel = Instance.new("TextLabel")
+moneyLabel.Name = "MoneyLabel"
+moneyLabel.Size = UDim2.new(1, 0, 0, 30)
+moneyLabel.Position = UDim2.new(0, 0, 0, 110)
+moneyLabel.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+moneyLabel.TextColor3 = Color3.fromRGB(0, 255, 100)
+moneyLabel.TextSize = 14
+moneyLabel.Font = Enum.Font.Gotham
+moneyLabel.Text = "Money: $0"
+moneyLabel.Parent = mainFrame
+
+-- Variables
+local isAFKActive = false
+local afkLoopActive = false
+local moneyPerSecond = 100
+
+-- Update Money Label
+local function updateMoneyLabel()
+	moneyLabel.Text = "Money: $" .. tostring(money.Value)
+end
+
+money.Changed:Connect(updateMoneyLabel)
+
+-- AFK Money Loop
+local function startAFKMoney()
+	if afkLoopActive then return end
+	afkLoopActive = true
+	isAFKActive = true
+	afkButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+	afkButton.Text = "⏹️ Stop AFK Money"
+	
+	while isAFKActive do
+		money.Value = money.Value + moneyPerSecond
+		wait(1)
+	end
+end
+
+-- Stop AFK Money
+local function stopAFKMoney()
+	isAFKActive = false
+	afkLoopActive = false
+	afkButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+	afkButton.Text = "🔄 Start AFK Money"
+end
+
+-- Button Click Event
+afkButton.MouseButton1Click:Connect(function()
+	if isAFKActive then
+		stopAFKMoney()
+	else
+		startAFKMoney()
+	end
+end)
+
+-- Cleanup on player leaving
+player.AncestryChanged:Connect(function()
+	if not player.Parent then
+		isAFKActive = false
+		afkLoopActive = false
+	end
+end)
