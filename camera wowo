@@ -1,1 +1,31 @@
+-- NoDeath_CameraImmunityManager.lua
+-- وضع هذا الملف في المسار "camera wowo" داخل المستودع.
+-- هذا سكربت خادم (Server) لـ Roblox يضبط سمة "CameraImmune" لكل لاعب عند دخوله.
+-- تأكد أن سكربتات الكاميرا تتحقق من هذه السمة قبل قتل اللاعب:
+-- local player = game.Players:GetPlayerFromCharacter(character)
+-- if player and player:GetAttribute("CameraImmune") then return end
 
+local Players = game:GetService("Players")
+
+-- افتراض: نريد أن يكون اللاعب محميًا افتراضيًا. غيّر إلى false إذا تريد الحماية تُفعل يدوياً.
+local DEFAULT_IMMUNE = true
+
+local function setImmune(player, value)
+    if not player then return end
+    player:SetAttribute("CameraImmune", value)
+end
+
+local function onPlayerAdded(player)
+    setImmune(player, DEFAULT_IMMUNE)
+
+    -- مثال: تستطيع إضافة RemoteEvent أو أوامر لتمكين/تعطيل هذه الخاصية من العميل
+    -- أو من سيرفر الأدمن. هنا تركنا الميزة بسيطة: السمة موجودة ويمكن تعديلها بواسطة سكربتات أخرى.
+end
+
+Players.PlayerAdded:Connect(onPlayerAdded)
+
+for _, p in ipairs(Players:GetPlayers()) do
+    onPlayerAdded(p)
+end
+
+print("[NoDeath_CameraImmunityManager] Loaded. Default immunity = " .. tostring(DEFAULT_IMMUNE))
